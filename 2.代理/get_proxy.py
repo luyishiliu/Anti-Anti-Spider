@@ -22,7 +22,7 @@ Type = sys.getfilesystemencoding()
 MYSQL_HOST = '171.15.132.56'
 MYSQL_DBNAME = 'CollectTwitter'
 MYSQL_USER = 'luyishisi'
-MYSQL_PASSWD = 'LUYIluyi'
+MYSQL_PASSWD = ''
 MYSQL_PORT= 33306
 
 # 此处修改数据库插入修改语句
