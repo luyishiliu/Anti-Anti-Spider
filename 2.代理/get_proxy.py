@@ -20,15 +20,15 @@ Type = sys.getfilesystemencoding()
 
 # 数据库设置
 MYSQL_HOST = '171.15.132.56'
-MYSQL_DBNAME = 'CollectTwitter'
+MYSQL_DBNAME = 'DataBase_GD'
 MYSQL_USER = 'luyishisi'
 MYSQL_PASSWD = ''
 MYSQL_PORT= 33306
 
 # 此处修改数据库插入修改语句
 install_str = '''
-INSERT INTO proxy( `id`, `proxy_ip`, `proxy_port`, `proxy_country`, `proxy_type`, `addtime`, `Last_test_time`, `proxy_status`, `Remarks`   )
-VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)  '''
+INSERT INTO proxy( `proxy_ip`, `proxy_port`, `proxy_country`, `proxy_type`, `addtime`, `Last_test_time`, `proxy_status`, `Remarks`   )
+VALUES (%s,%s,%s,%s,%s,%s,%s,%s)  '''
 
 # 此处修改伪造的头字段,
 headers = {
@@ -72,7 +72,6 @@ def get_request(url,headers):
 def re_html_code(html_code,proxy_list_json):
 
     re_str = '(?<=insertPrx\().*\}'
-	
     proxy_list = re.findall(re_str,html_code)
     null = ''
 
@@ -82,11 +81,18 @@ def re_html_code(html_code,proxy_list_json):
         json_list = eval(i)
 
         PROXY_IP = json_list['PROXY_IP']
+        PROXY_PORT = json_list['PROXY_PORT']
+        PROXY_PORT = int(PROXY_PORT,16)
+
         PROXY_COUNTRY = json_list['PROXY_COUNTRY']
-        PROXY_PORT= json_list['PROXY_PORT']
         PROXY_TYPE= json_list['PROXY_TYPE']
-        
-        list_i = [PROXY_IP,PROXY_PORT,PROXY_TYPE,PROXY_COUNTRY,]
+        addtime = time.ctime()
+        Last_test_time = json_list['PROXY_LAST_UPDATE']
+        proxy_status = '1'
+        Remarks = 'ly'
+        # `id`, `proxy_ip`, `proxy_port`, `proxy_country`, `proxy_type`, `addtime`, `Last_test_time`, `proxy_status`, `Remarks`   
+
+        list_i = [PROXY_IP,PROXY_PORT,PROXY_COUNTRY,PROXY_TYPE,addtime,Last_test_time,proxy_status,Remarks]
         
         proxy_list_json.append(list_i)
 		
@@ -96,20 +102,23 @@ def re_html_code(html_code,proxy_list_json):
 
 
 if __name__ == '__main__':
+    try:
+        conn = MySQLdb.connect(host=MYSQL_HOST,user=MYSQL_USER,passwd=MYSQL_PASSWD,db=MYSQL_DBNAME,port=MYSQL_PORT,charset='utf8')
+        cur = conn.cursor()
+    except Exception,e:
+        print Exception,e
+
+    url = "http://www.gatherproxy.com/zh/proxylist/country/?c=China"
     
-    conn = MySQLdb.connect(host=MYSQL_HOST,user=MYSQL_USER,passwd=MYSQL_PASSWD,db=MYSQL_DBNAME,port=MYSQL_PORT,charset='utf8')
-    cur = conn.cursor()
-
-    url = "http://www.gatherproxy.com/zh/proxylist/country/?c=China#"
-    html_code = get_request(url,headers)
-
-    proxy_list_json = []
-
-    for i in range(1,36):
-        now_url = url + str(i)
+    try:
+        html_code = get_request(url,headers)
+        proxy_list_json = []
+        now_url = url
         proxy_list_json = re_html_code(html_code,proxy_list_json)
-    
-    for i in proxy_list_json:
-        print i
-    print len(proxy_list_json)
+        for i in proxy_list_json:
+            print i
+            insert_ll(install_str,i,conn,cur)
+    except Exception,e:
+        print Exception,e
+
 
